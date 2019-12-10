@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		43D08ECA61E0F3979702666B /* Pods_BleClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB6918C3E1ACFCAF9186940E /* Pods_BleClient.framework */; };
 		D7D202791D4F614D00E10F6A /* BleClient.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D202771D4F614D00E10F6A /* BleClient.m */; };
 /* End PBXBuildFile section */
 
@@ -27,6 +28,9 @@
 		D760681620BBEEA10005ECAF /* BleClient-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BleClient-Bridging-Header.h"; sourceTree = "<group>"; };
 		D7D202771D4F614D00E10F6A /* BleClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BleClient.m; sourceTree = "<group>"; };
 		D7D202781D4F614D00E10F6A /* BleClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BleClient.h; sourceTree = "<group>"; };
+		DD0F1936EF148B42CB26A383 /* Pods-BleClient.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BleClient.debug.xcconfig"; path = "Target Support Files/Pods-BleClient/Pods-BleClient.debug.xcconfig"; sourceTree = "<group>"; };
+		E21FEC3E81A98EDDC81B2A8E /* Pods-BleClient.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BleClient.release.xcconfig"; path = "Target Support Files/Pods-BleClient/Pods-BleClient.release.xcconfig"; sourceTree = "<group>"; };
+		FB6918C3E1ACFCAF9186940E /* Pods_BleClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BleClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -34,12 +38,31 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				43D08ECA61E0F3979702666B /* Pods_BleClient.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8DA4EAB1CB6D971A8768F23F /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				DD0F1936EF148B42CB26A383 /* Pods-BleClient.debug.xcconfig */,
+				E21FEC3E81A98EDDC81B2A8E /* Pods-BleClient.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		B911716909253747A4271E14 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FB6918C3E1ACFCAF9186940E /* Pods_BleClient.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		D73F06DF1D48E17B00AD5963 = {
 			isa = PBXGroup;
 			children = (
@@ -47,6 +70,8 @@
 				D7D202781D4F614D00E10F6A /* BleClient.h */,
 				D760681620BBEEA10005ECAF /* BleClient-Bridging-Header.h */,
 				D73F06E91D48E17B00AD5963 /* Products */,
+				8DA4EAB1CB6D971A8768F23F /* Pods */,
+				B911716909253747A4271E14 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -65,6 +90,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D73F06F11D48E17B00AD5963 /* Build configuration list for PBXNativeTarget "BleClient" */;
 			buildPhases = (
+				06A3828629F8A66497004F85 /* [CP] Check Pods Manifest.lock */,
 				D73F06E41D48E17B00AD5963 /* Sources */,
 				D73F06E51D48E17B00AD5963 /* Frameworks */,
 				D73F06E61D48E17B00AD5963 /* CopyFiles */,
@@ -110,6 +136,31 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		06A3828629F8A66497004F85 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-BleClient-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		D73F06E41D48E17B00AD5963 /* Sources */ = {
@@ -228,6 +279,7 @@
 		};
 		D73F06F21D48E17B00AD5963 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DD0F1936EF148B42CB26A383 /* Pods-BleClient.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -244,6 +296,7 @@
 		};
 		D73F06F31D48E17B00AD5963 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E21FEC3E81A98EDDC81B2A8E /* Pods-BleClient.release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
