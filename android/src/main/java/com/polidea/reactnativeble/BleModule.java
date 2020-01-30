@@ -1943,10 +1943,8 @@ public class BleModule extends ReactContextBaseJavaModule {
                         jsResult.pushNull();
 
                         if (!batchBytesForDevice.containsKey(deviceId)) {
-                            characteristic.logValue("onCompleted", null);
                             jsResult.pushMap(characteristic.toJSObject(null));
                         } else {
-                            characteristic.logValue("onCompleted", batchBytesForDevice.get(deviceId));
                             jsResult.pushMap(characteristic.toJSObject(batchBytesForDevice.get(deviceId)));
 
                             // Remove the now copied data
@@ -1984,8 +1982,6 @@ public class BleModule extends ReactContextBaseJavaModule {
                                 outputStream.write(batchBytesForDevice.get(deviceId));
                                 outputStream.write(bytes);
                                 batchBytesForDevice.put(deviceId, outputStream.toByteArray());
-
-                                characteristic.logValue("onNext", batchBytesForDevice.get(deviceId));
                             }
                         } catch (Throwable e) {
                             errorConverter.toError(e).reject(promise);
