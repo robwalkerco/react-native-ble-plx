@@ -12,6 +12,7 @@ import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
@@ -53,6 +54,7 @@ import com.polidea.rxandroidble.scan.ScanFilter;
 import com.polidea.rxandroidble.scan.ScanResult;
 import com.polidea.rxandroidble.scan.ScanSettings;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -117,6 +119,8 @@ public class BleModule extends ReactContextBaseJavaModule {
 
     // Current native library log level.
     private int currentLogLevel = RxBleLog.NONE;
+
+    private HashMap<String, byte[]> batchBytesForDevice = new HashMap<>();
 
     public BleModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -1872,5 +1876,123 @@ public class BleModule extends ReactContextBaseJavaModule {
                 discoveredDescriptors.remove(key);
             }
         }
+    }
+
+    @ReactMethod
+    public void monitorCharacteristicForDeviceBatched(final String deviceId,
+                                               final String serviceUUID,
+                                               final String characteristicUUID,
+                                               final String transactionId,
+                                               final Promise promise) {
+
+        final Characteristic characteristic = getCharacteristicOrReject(
+                deviceId, serviceUUID, characteristicUUID, promise);
+        if (characteristic == null) {
+            return;
+        }
+
+        safeMonitorCharacteristicForDeviceBatched(deviceId, characteristic, transactionId, new SafePromise(promise));
+    }
+
+    private void safeMonitorCharacteristicForDeviceBatched(final String deviceId,
+                                                           final Characteristic characteristic,
+                                                    final String transactionId,
+                                                    final SafePromise promise) {
+        // reset batchedBytes
+        batchBytesForDevice.remove(deviceId);
+
+
+        final RxBleConnection connection = getConnectionOrReject(characteristic.getService().getDevice(), promise);
+        if (connection == null) {
+            return;
+        }
+
+        final BluetoothGattCharacteristic gattCharacteristic = characteristic.getNativeCharacteristic();
+
+        final Subscription subscription = Observable.defer(new Func0<Observable<Observable<byte[]>>>() {
+            @Override
+            public Observable<Observable<byte[]>> call() {
+                int properties = gattCharacteristic.getProperties();
+                BluetoothGattDescriptor cccDescriptor = gattCharacteristic.getDescriptor(Characteristic.CLIENT_CHARACTERISTIC_CONFIG_UUID);
+                NotificationSetupMode setupMode = cccDescriptor != null
+                        ? NotificationSetupMode.QUICK_SETUP
+                        : NotificationSetupMode.COMPAT;
+                if ((properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
+                    return connection.setupNotification(gattCharacteristic, setupMode);
+                }
+
+                if ((properties & BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0) {
+                    return connection.setupIndication(gattCharacteristic, setupMode);
+                }
+
+                return Observable.error(new CannotMonitorCharacteristicException(gattCharacteristic));
+            }
+        })
+                .flatMap(new Func1<Observable<byte[]>, Observable<byte[]>>() {
+                    @Override
+                    public Observable<byte[]> call(Observable<byte[]> observable) {
+                        return observable;
+                    }
+                })
+                .onBackpressureBuffer()
+                .observeOn(Schedulers.computation())
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        WritableArray jsResult = Arguments.createArray();
+                        jsResult.pushNull();
+
+                        if (!batchBytesForDevice.containsKey(deviceId)) {
+                            characteristic.logValue("onCompleted", null);
+                            jsResult.pushMap(characteristic.toJSObject(null));
+                        } else {
+                            characteristic.logValue("onCompleted", batchBytesForDevice.get(deviceId));
+                            jsResult.pushMap(characteristic.toJSObject(batchBytesForDevice.get(deviceId)));
+
+                            // Remove the now copied data
+                            batchBytesForDevice.remove(deviceId);
+                        }
+                        jsResult.pushString(transactionId);
+                        sendEvent(Event.ReadEvent, jsResult);
+
+                        promise.resolve(null);
+                        transactions.removeSubscription(transactionId);
+                    }
+                })
+                .subscribe(new Observer<byte[]>() {
+                    @Override
+                    public void onCompleted() {
+                        promise.resolve(null);
+                        transactions.removeSubscription(transactionId);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        errorConverter.toError(e).reject(promise);
+                        transactions.removeSubscription(transactionId);
+                    }
+
+                    @Override
+                    public void onNext(byte[] bytes) {
+                        characteristic.logValue("Notification from", bytes);
+
+                        try {
+                            if (!batchBytesForDevice.containsKey(deviceId)) {
+                                batchBytesForDevice.put(deviceId, bytes);
+                            } else {
+                                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                                outputStream.write(batchBytesForDevice.get(deviceId));
+                                outputStream.write(bytes);
+                                batchBytesForDevice.put(deviceId, outputStream.toByteArray());
+
+                                characteristic.logValue("onNext", batchBytesForDevice.get(deviceId));
+                            }
+                        } catch (Throwable e) {
+                            errorConverter.toError(e).reject(promise);
+                        }
+                    }
+                });
+
+        transactions.replaceSubscription(transactionId, subscription);
     }
 }

@@ -1251,4 +1251,19 @@ export class BleManager {
     )
     return new Descriptor(nativeDescriptor, this)
   }
+
+  monitorCharacteristicForDeviceBatched(
+    deviceIdentifier: DeviceId,
+    serviceUUID: UUID,
+    characteristicUUID: UUID,
+    listener: (error: ?BleError, characteristic: ?Characteristic) => void,
+    transactionId: ?TransactionId
+  ): Subscription {
+    const filledTransactionId = transactionId || this._nextUniqueID()
+    return this._handleMonitorCharacteristic(
+      BleModule.monitorCharacteristicForDeviceBatched(deviceIdentifier, serviceUUID, characteristicUUID, filledTransactionId),
+      filledTransactionId,
+      listener
+    )
+  }
 }

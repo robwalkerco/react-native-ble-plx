@@ -1384,6 +1384,27 @@ declare module 'react-native-ble-plx' {
       valueBase64: Base64,
       transactionId?: string
     ): Promise<Descriptor>
+
+    /**
+     * Monitor value changes of a {@link Characteristic}. If notifications are enabled they will be used
+     * in favour of indications.
+     *
+     * @param {DeviceId} deviceIdentifier {@link Device} identifier.
+     * @param {UUID} serviceUUID {@link Service} UUID.
+     * @param {UUID} characteristicUUID {@link Characteristic} UUID.
+     * @param {function(error?: BleError, characteristic?: Characteristic)} listener - callback which emits
+     * {@link Characteristic} objects with modified value for each notification.
+     * @param {?TransactionId} transactionId optional `transactionId` which can be used in
+     * {@link #blemanagercanceltransaction|cancelTransaction()} function.
+     * @returns {Subscription} Subscription on which `remove()` function can be called to unsubscribe.
+     */
+    monitorCharacteristicForDeviceBatched(
+      deviceIdentifier: DeviceId,
+      serviceUUID: UUID,
+      characteristicUUID: UUID,
+      listener: (error: BleError | null, characteristic: Characteristic | null) => void,
+      transactionId?: TransactionId
+    ): Subscription
   }
 
   // Device.js *********************************************************************************************************
