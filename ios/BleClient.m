@@ -510,4 +510,18 @@ RCT_EXPORT_METHOD(logLevel:(RCTPromiseResolveBlock)resolve
                 reject:reject];
 }
 
+RCT_EXPORT_METHOD(monitorCharacteristicForDeviceBatched:(NSString*)deviceIdentifier
+                                     serviceUUID:(NSString*)serviceUUID
+                              characteristicUUID:(NSString*)characteristicUUID
+                                   transactionID:(NSString*)transactionId
+                                        resolver:(RCTPromiseResolveBlock)resolve
+                                        rejecter:(RCTPromiseRejectBlock)reject) {
+    [_manager monitorCharacteristicForDeviceBatched:deviceIdentifier
+                                 serviceUUID:serviceUUID
+                          characteristicUUID:characteristicUUID
+                               transactionId:transactionId
+                                     resolve:resolve
+                                      reject:reject];
+}
+
 @end

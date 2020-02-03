@@ -62,6 +62,8 @@ public class BleClientManager : NSObject {
     // Map of pending read operations.
     private var pendingReads = Dictionary<Double, Int>()
     
+    private var batchBytesForDevice = Dictionary<String, String>()
+    
     // Constants
     static let cccdUUID = CBUUID(string: "2902")
 
@@ -1276,5 +1278,78 @@ public class BleClientManager : NSObject {
 
     private func dispatchEvent(_ event: String, value: Any) {
         delegate?.dispatchEvent(event, value: value)
+    }
+    
+    @objc
+    public func monitorCharacteristicForDeviceBatched(  _ deviceIdentifier: String,
+                                                        serviceUUID: String,
+                                                 characteristicUUID: String,
+                                                      transactionId: String,
+                                                            resolve: @escaping Resolve,
+                                                             reject: @escaping Reject) {
+        let observable = getCharacteristicForDevice(deviceIdentifier,
+                                                    serviceUUID: serviceUUID,
+                                                    characteristicUUID: characteristicUUID)
+
+        safeMonitorCharacteristicForDeviceBatched(observable,
+                                                  deviceIdentifier: deviceIdentifier,
+                                           transactionId: transactionId,
+                                           promise: SafePromise(resolve: resolve, reject: reject))
+    }
+    
+    private func safeMonitorCharacteristicForDeviceBatched(_ characteristicObservable: Observable<Characteristic>,
+                                                           deviceIdentifier: String,
+                                                                 transactionId: String,
+                                                                       promise: SafePromise) {
+
+        // reset batchedBytes
+        batchBytesForDevice.removeValue(forKey: deviceIdentifier)
+        
+        let observable: Observable<Characteristic> = characteristicObservable
+            .flatMap { [weak self] (characteristic: Characteristic) -> Observable<Characteristic> in
+                let characteristicIdentifier = characteristic.jsIdentifier
+                if let monitoringObservable = self?.monitoredCharacteristics[characteristicIdentifier] {
+                    return monitoringObservable
+                } else {
+                    let newObservable: Observable<Characteristic> = characteristic
+                        .setNotificationAndMonitorUpdates()
+                        .do(onNext: nil, onError: nil, onCompleted: nil, onSubscribe: nil, onDispose: {
+                            _ = characteristic.setNotifyValue(false).subscribe()
+                            self?.monitoredCharacteristics[characteristicIdentifier] = nil
+                        })
+                        .share()
+                    self?.monitoredCharacteristics[characteristicIdentifier] = newObservable
+                    return newObservable
+                }
+            }
+
+        let disposable = observable.subscribe(
+            onNext: { [weak self] characteristic in
+                print("onNext")
+                
+                if self?.pendingReads[characteristic.jsIdentifier] ?? 0 == 0 {
+                    self?.batchBytesForDevice.updateValue((self?.batchBytesForDevice[deviceIdentifier] ?? "") +  (characteristic.valueBase64 ?? ""), forKey: deviceIdentifier);
+                }
+            }, onError: { [weak self] error in
+                print("onError")
+                self?.dispatchEvent(BleEvent.readEvent, value: [error.bleError.toJS, NSNull(), transactionId])
+            }, onCompleted: {
+                print("onCompleted")
+            }, onDisposed: { [weak self] in
+                print("onDisposed")
+                
+                if (self?.batchBytesForDevice[deviceIdentifier] != nil) {
+                    self?.dispatchEvent(BleEvent.readEvent, value: [NSNull(), [
+                        "value": self?.batchBytesForDevice[deviceIdentifier]
+                    ], transactionId])
+                    
+                    self?.batchBytesForDevice.removeValue(forKey: deviceIdentifier)
+                }
+
+                self?.transactions.removeDisposable(transactionId)
+                promise.resolve(nil)
+            })
+
+        transactions.replaceDisposable(transactionId, disposable: disposable)
     }
 }

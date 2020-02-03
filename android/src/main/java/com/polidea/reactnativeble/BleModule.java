@@ -1942,14 +1942,13 @@ public class BleModule extends ReactContextBaseJavaModule {
                         WritableArray jsResult = Arguments.createArray();
                         jsResult.pushNull();
 
-                        if (!batchBytesForDevice.containsKey(deviceId)) {
-                            jsResult.pushMap(characteristic.toJSObject(null));
-                        } else {
+                        if (batchBytesForDevice.containsKey(deviceId)) {
                             jsResult.pushMap(characteristic.toJSObject(batchBytesForDevice.get(deviceId)));
 
                             // Remove the now copied data
                             batchBytesForDevice.remove(deviceId);
                         }
+                        
                         jsResult.pushString(transactionId);
                         sendEvent(Event.ReadEvent, jsResult);
 
