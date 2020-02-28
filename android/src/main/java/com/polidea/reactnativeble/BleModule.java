@@ -1948,7 +1948,7 @@ public class BleModule extends ReactContextBaseJavaModule {
                             // Remove the now copied data
                             batchBytesForDevice.remove(deviceId);
                         }
-                        
+
                         jsResult.pushString(transactionId);
                         sendEvent(Event.ReadEvent, jsResult);
 
@@ -1970,17 +1970,21 @@ public class BleModule extends ReactContextBaseJavaModule {
                     }
 
                     @Override
-                    public void onNext(byte[] bytes) {
-                        characteristic.logValue("Notification from", bytes);
+                    public void onNext(byte[] receivedBytes) {
+                        characteristic.logValue("Notification from", receivedBytes);
+
 
                         try {
                             if (!batchBytesForDevice.containsKey(deviceId)) {
-                                batchBytesForDevice.put(deviceId, bytes);
+                                batchBytesForDevice.put(deviceId, receivedBytes);
                             } else {
-                                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                                outputStream.write(batchBytesForDevice.get(deviceId));
-                                outputStream.write(bytes);
-                                batchBytesForDevice.put(deviceId, outputStream.toByteArray());
+                                byte[] existingBytes = batchBytesForDevice.get(deviceId);
+
+                                byte[] combinedBytes = new byte[existingBytes.length + receivedBytes.length];
+                                System.arraycopy(existingBytes, 0, combinedBytes, 0, existingBytes.length);
+                                System.arraycopy(receivedBytes, 0, combinedBytes, existingBytes.length, receivedBytes.length);
+
+                                batchBytesForDevice.put(deviceId, combinedBytes);
                             }
                         } catch (Throwable e) {
                             errorConverter.toError(e).reject(promise);

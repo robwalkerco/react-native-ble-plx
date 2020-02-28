@@ -62,7 +62,7 @@ public class BleClientManager : NSObject {
     // Map of pending read operations.
     private var pendingReads = Dictionary<Double, Int>()
     
-    private var batchBytesForDevice = Dictionary<String, String>()
+    private var batchBytesForDevice = Dictionary<String, Data>()
     
     // Constants
     static let cccdUUID = CBUUID(string: "2902")
@@ -1325,22 +1325,30 @@ public class BleClientManager : NSObject {
 
         let disposable = observable.subscribe(
             onNext: { [weak self] characteristic in
-                print("onNext")
                 
                 if self?.pendingReads[characteristic.jsIdentifier] ?? 0 == 0 {
-                    self?.batchBytesForDevice.updateValue((self?.batchBytesForDevice[deviceIdentifier] ?? "") +  (characteristic.valueBase64 ?? ""), forKey: deviceIdentifier);
+                
+                    let currentValue =  self?.batchBytesForDevice[deviceIdentifier]
+                                    
+                    var messageData = Data()
+                    
+                    if (currentValue != nil) {
+                        messageData.append(currentValue!)
+                    }
+                    if (characteristic.value != nil) {
+                        messageData.append(characteristic.value!)
+                    }
+
+                    self?.batchBytesForDevice.updateValue(messageData, forKey: deviceIdentifier)
                 }
             }, onError: { [weak self] error in
-                print("onError")
                 self?.dispatchEvent(BleEvent.readEvent, value: [error.bleError.toJS, NSNull(), transactionId])
             }, onCompleted: {
-                print("onCompleted")
             }, onDisposed: { [weak self] in
-                print("onDisposed")
                 
                 if (self?.batchBytesForDevice[deviceIdentifier] != nil) {
                     self?.dispatchEvent(BleEvent.readEvent, value: [NSNull(), [
-                        "value": self?.batchBytesForDevice[deviceIdentifier]
+                        "value": self?.batchBytesForDevice[deviceIdentifier]?.base64
                     ], transactionId])
                     
                     self?.batchBytesForDevice.removeValue(forKey: deviceIdentifier)
